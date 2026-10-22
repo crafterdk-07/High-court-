@@ -1,0 +1,366 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Private Video Player</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #090b10;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+#login {
+    width: 100%;
+    max-width: 380px;
+    background: #141821;
+    padding: 35px 25px;
+    border: 1px solid #292f3c;
+    border-radius: 18px;
+    text-align: center;
+}
+
+.lock {
+    font-size: 45px;
+    margin-bottom: 18px;
+}
+
+h2 {
+    margin-bottom: 10px;
+    font-size: 25px;
+}
+
+p {
+    color: #9ba3b4;
+    font-size: 14px;
+    margin-bottom: 22px;
+}
+
+input {
+    width: 100%;
+    padding: 14px;
+    background: #090b10;
+    color: white;
+    border: 1px solid #343b4b;
+    border-radius: 9px;
+    outline: none;
+    font-size: 16px;
+    margin-bottom: 14px;
+}
+
+button {
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#loginBtn {
+    width: 100%;
+    padding: 14px;
+    background: #6c63ff;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 9px;
+}
+
+button:hover {
+    filter: brightness(1.15);
+}
+
+#error {
+    color: #ff6666;
+    margin-top: 14px;
+    font-size: 14px;
+    min-height: 17px;
+}
+
+#playerPage {
+    display: none;
+    width: 100%;
+    max-width: 950px;
+}
+
+.header {
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 25px;
+    margin-bottom: 7px;
+}
+
+.header p {
+    margin-bottom: 0;
+}
+
+.player {
+    background: #141821;
+    border: 1px solid #292f3c;
+    border-radius: 16px;
+    padding: 12px;
+    overflow: hidden;
+}
+
+.videoBox {
+    position: relative;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+video {
+    display: block;
+    width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    background: #000;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 18px 5px 8px;
+}
+
+.controlBtn {
+    background: #252b39;
+    color: #fff;
+    padding: 12px 15px;
+    border-radius: 9px;
+    font-size: 15px;
+}
+
+.playBtn {
+    background: #6c63ff;
+    min-width: 105px;
+    font-weight: bold;
+}
+
+.timeline {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 5px 5px;
+}
+
+.timeline input {
+    margin: 0;
+    padding: 0;
+    height: 5px;
+    accent-color: #6c63ff;
+    cursor: pointer;
+}
+
+.time {
+    font-size: 12px;
+    color: #b7bdca;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 14px;
+    }
+
+    .controls {
+        gap: 8px;
+    }
+
+    .controlBtn {
+        padding: 11px 12px;
+        font-size: 13px;
+    }
+
+    .header h1 {
+        font-size: 21px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="login">
+    <div class="lock">🔒</div>
+    <h2>Private Video</h2>
+    <p>Enter your password to continue</p>
+
+    <form id="loginForm">
+        <input
+            type="password"
+            id="password"
+            placeholder="Enter password"
+            autocomplete="off"
+            required
+        >
+        <button type="submit" id="loginBtn">
+            Unlock Video →
+        </button>
+    </form>
+
+    <div id="error"></div>
+</div>
+
+<main id="playerPage">
+    <div class="header">
+        <h1>Private Video Player</h1>
+        <p>Your personal video space</p>
+    </div>
+
+    <div class="player">
+        <div class="videoBox" id="videoBox">
+            <video id="video" preload="metadata" playsinline>
+                <source src="clip.mp4" type="video/mp4">
+                Your browser does not support video playback.
+            </video>
+        </div>
+
+        <div class="timeline">
+            <span class="time" id="currentTime">00:00</span>
+            <input type="range" id="seekBar"
+                   min="0" max="100" value="0"
+                   aria-label="Video progress">
+            <span class="time" id="duration">00:00</span>
+        </div>
+
+        <div class="controls">
+            <button class="controlBtn" id="backBtn">
+                ⏪ 10s
+            </button>
+
+            <button class="controlBtn playBtn" id="playBtn">
+                ▶ Play
+            </button>
+
+            <button class="controlBtn" id="forwardBtn">
+                10s ⏩
+            </button>
+
+            <button class="controlBtn" id="fullscreenBtn">
+                ⛶ Fullscreen
+            </button>
+        </div>
+    </div>
+</main>
+
+<script>
+const CORRECT_PASSWORD = "1234554321";
+
+const login = document.getElementById("login");
+const playerPage = document.getElementById("playerPage");
+const passwordInput = document.getElementById("password");
+const error = document.getElementById("error");
+
+const video = document.getElementById("video");
+const videoBox = document.getElementById("videoBox");
+const playBtn = document.getElementById("playBtn");
+const seekBar = document.getElementById("seekBar");
+const currentTime = document.getElementById("currentTime");
+const duration = document.getElementById("duration");
+
+document.getElementById("loginForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    if (passwordInput.value === CORRECT_PASSWORD) {
+        login.style.display = "none";
+        playerPage.style.display = "block";
+        error.textContent = "";
+        video.load();
+    } else {
+        error.textContent = "Incorrect password. Try again.";
+        passwordInput.value = "";
+        passwordInput.focus();
+    }
+});
+
+function formatTime(seconds) {
+    if (!Number.isFinite(seconds)) return "00:00";
+
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+
+    return String(mins).padStart(2, "0") + ":" +
+           String(secs).padStart(2, "0");
+}
+
+playBtn.addEventListener("click", function() {
+    if (video.paused) {
+        video.play().catch(() => {});
+    } else {
+        video.pause();
+    }
+});
+
+video.addEventListener("play", function() {
+    playBtn.textContent = "⏸ Pause";
+});
+
+video.addEventListener("pause", function() {
+    playBtn.textContent = "▶ Play";
+});
+
+document.getElementById("backBtn").addEventListener("click", function() {
+    video.currentTime = Math.max(0, video.currentTime - 10);
+});
+
+document.getElementById("forwardBtn").addEventListener("click", function() {
+    video.currentTime = Math.min(
+        video.duration || Infinity,
+        video.currentTime + 10
+    );
+});
+
+video.addEventListener("loadedmetadata", function() {
+    duration.textContent = formatTime(video.duration);
+});
+
+video.addEventListener("timeupdate", function() {
+    currentTime.textContent = formatTime(video.currentTime);
+
+    if (Number.isFinite(video.duration) && video.duration > 0) {
+        seekBar.value = (video.currentTime / video.duration) * 100;
+    }
+});
+
+seekBar.addEventListener("input", function() {
+    if (Number.isFinite(video.duration)) {
+        video.currentTime = (Number(seekBar.value) / 100) * video.duration;
+    }
+});
+
+document.getElementById("fullscreenBtn").addEventListener("click", async function() {
+    try {
+        if (document.fullscreenElement) {
+            await document.exitFullscreen();
+        } else if (videoBox.requestFullscreen) {
+            await videoBox.requestFullscreen();
+        } else if (video.webkitEnterFullscreen) {
+            video.webkitEnterFullscreen();
+        }
+    } catch (err) {
+        console.log("Fullscreen unavailable", err);
+    }
+});
+</script>
+
+</body>
+</html>
